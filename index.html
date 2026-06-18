@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APS Invoice Generator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+:root{
+  --bg:#0a2230;--card:#112e2e;--border:rgba(243,237,224,0.09);
+  --green:#1C4D40;--green-light:#6fae7d;--green-soft:#8fc19e;
+  --cream:#f3ede0;--muted:#c7d6cf;--dim:rgba(199,214,207,0.45);
+  --active:#4caf74;--warm:#e8a84c;
+}
+
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--cream);min-height:100vh;}
+
+/* ── TOP BAR ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 40px;background:rgba(10,34,48,0.97);
+  border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;
+}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:var(--cream);}
+.topbar-sub{font-size:11px;color:var(--dim);margin-top:2px;}
+.topbar-right{display:flex;gap:10px;}
+.btn{
+  padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;
+  cursor:pointer;border:none;font-family:'Inter',sans-serif;
+  transition:all 0.15s;letter-spacing:0.02em;
+}
+.btn-outline{background:transparent;color:var(--green-light);border:1px solid rgba(111,174,125,0.35);}
+.btn-outline:hover{background:rgba(111,174,125,0.08);border-color:var(--green-light);}
+.btn-primary{background:var(--green);color:var(--cream);border:1px solid rgba(111,174,125,0.3);}
+.btn-primary:hover{background:#1a4538;}
+.btn-green{background:var(--green-light);color:#0a2230;border:none;}
+.btn-green:hover{background:#5d9a6b;}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:420px 1fr;min-height:calc(100vh - 57px);}
+
+/* ── FORM PANEL ── */
+.form-panel{
+  background:#0d2828;border-right:1px solid var(--border);
+  padding:28px 28px 48px;overflow-y:auto;max-height:calc(100vh - 57px);
+}
+.form-section{margin-bottom:28px;}
+.form-section-title{
+  font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:0.2em;text-transform:uppercase;color:var(--green-soft);
+  margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);
+}
+
+/* Mode toggle */
+.mode-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px;}
+.mode-btn{
+  padding:12px;border-radius:10px;border:1px solid var(--border);
+  background:transparent;color:var(--muted);font-family:'Inter',sans-serif;
+  font-size:12px;cursor:pointer;text-align:center;transition:all 0.15s;
+}
+.mode-btn.active{background:rgba(111,174,125,0.12);border-color:var(--green-light);color:var(--cream);}
+.mode-btn .mode-icon{font-size:20px;display:block;margin-bottom:6px;}
+.mode-btn .mode-label{font-weight:600;display:block;}
+.mode-btn .mode-sub{font-size:10px;color:var(--dim);display:block;margin-top:2px;}
+
+label{display:block;font-size:11px;color:var(--dim);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:5px;margin-top:14px;}
+input,textarea,select{
+  width:100%;padding:10px 12px;border-radius:8px;
+  background:rgba(255,255,255,0.04);border:1px solid var(--border);
+  color:var(--cream);font-family:'Inter',sans-serif;font-size:13px;
+  transition:border-color 0.15s;outline:none;
+}
+input:focus,textarea:focus,select:focus{border-color:rgba(111,174,125,0.4);}
+input::placeholder,textarea::placeholder{color:var(--dim);}
+select option{background:#112e2e;color:var(--cream);}
+textarea{resize:vertical;min-height:70px;}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* Line items */
+.line-items{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+.line-item{
+  display:grid;gap:6px;padding:12px;
+  background:rgba(255,255,255,0.03);border:1px solid var(--border);
+  border-radius:10px;position:relative;
+}
+.line-item-row{display:grid;grid-template-columns:1fr 1fr 80px auto;gap:6px;align-items:center;}
+.line-item input{font-size:12px;padding:7px 10px;}
+.remove-btn{
+  background:rgba(224,92,92,0.1);border:1px solid rgba(224,92,92,0.2);
+  color:#e05c5c;border-radius:6px;padding:7px 10px;cursor:pointer;
+  font-size:14px;transition:all 0.15s;font-family:'Inter',sans-serif;
+}
+.remove-btn:hover{background:rgba(224,92,92,0.2);}
+.add-line-btn{
+  width:100%;padding:9px;border-radius:8px;
+  border:1px dashed rgba(111,174,125,0.25);background:transparent;
+  color:var(--green-soft);font-size:12px;cursor:pointer;
+  font-family:'Inter',sans-serif;margin-top:8px;transition:all 0.15s;
+}
+.add-line-btn:hover{background:rgba(111,174,125,0.06);border-color:rgba(111,174,125,0.4);}
+
+/* Payment rows */
+.pay-row{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center;margin-bottom:6px;}
+.pay-row input{font-size:12px;padding:7px 10px;}
+
+/* ── PREVIEW PANEL ── */
+.preview-panel{
+  background:#f0ece3;overflow-y:auto;max-height:calc(100vh - 57px);
+  display:flex;flex-direction:column;align-items:center;padding:32px 24px;
+}
+.preview-label{
+  font-family:'Space Grotesk',sans-serif;font-size:11px;letter-spacing:0.2em;
+  text-transform:uppercase;color:#8a9e96;margin-bottom:20px;
+}
+
+/* ── INVOICE DOCUMENT ── */
+.invoice{
+  width:794px;min-height:1100px;background:#fff;
+  box-shadow:0 4px 40px rgba(0,0,0,0.15);
+  font-family:'Inter',sans-serif;color:#1a2e2a;
+}
+
+.inv-header{
+  background:linear-gradient(135deg,#0a2230 0%,#1C4D40 100%);
+  padding:32px 40px;display:flex;align-items:center;justify-content:space-between;
+}
+.inv-logo-area{display:flex;align-items:center;gap:16px;}
+.inv-logo{
+  width:60px;height:60px;border-radius:12px;overflow:hidden;
+  background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;
+}
+.inv-logo img{width:100%;height:100%;object-fit:cover;}
+.inv-company{color:#f3ede0;}
+.inv-company-name{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;letter-spacing:0.02em;}
+.inv-company-tag{font-size:10px;color:rgba(243,237,224,0.6);letter-spacing:0.12em;text-transform:uppercase;margin-top:2px;}
+.inv-header-right{text-align:right;color:rgba(243,237,224,0.8);}
+.inv-header-type{font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;}
+.inv-header-project{font-size:13px;color:#8fc19e;margin-top:4px;font-weight:500;}
+
+.inv-body{padding:40px 40px 32px;}
+
+.inv-title{
+  text-align:center;font-family:'Space Grotesk',sans-serif;
+  font-size:26px;font-weight:700;letter-spacing:0.08em;
+  color:#1C4D40;margin-bottom:6px;
+}
+.inv-divider{height:2px;background:linear-gradient(90deg,#1C4D40,transparent);margin-bottom:28px;}
+
+.inv-meta{
+  background:#f7f5f0;border-left:3px solid #1C4D40;
+  padding:18px 22px;border-radius:0 8px 8px 0;margin-bottom:28px;
+}
+.inv-meta-row{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;}
+.inv-meta-row:last-child{margin-bottom:0;}
+.inv-meta-key{font-size:12px;font-weight:700;color:#1a2e2a;min-width:130px;}
+.inv-meta-val{font-size:13px;color:#2a4a3a;}
+
+.inv-section-title{
+  font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:0.18em;text-transform:uppercase;color:#1C4D40;
+  margin-bottom:8px;padding-bottom:6px;
+  border-bottom:1px solid #d4e0da;
+}
+
+.inv-desc{font-size:13px;color:#3a5a4a;line-height:1.65;margin-bottom:28px;}
+
+/* Table */
+.inv-table{width:100%;border-collapse:collapse;margin-bottom:28px;}
+.inv-table thead tr{background:#1C4D40;}
+.inv-table thead th{
+  padding:11px 14px;text-align:left;font-size:10px;font-weight:700;
+  letter-spacing:0.14em;text-transform:uppercase;color:#f3ede0;
+}
+.inv-table thead th:last-child{text-align:right;}
+.inv-table tbody tr{border-bottom:1px solid #e8ede8;}
+.inv-table tbody tr:hover{background:#f7f9f7;}
+.inv-table tbody td{padding:11px 14px;font-size:13px;color:#1a2e2a;}
+.inv-table tbody td:last-child{text-align:right;font-weight:600;}
+.inv-table tfoot tr.total-row td{
+  padding:13px 14px;font-size:14px;font-weight:700;
+  background:#1C4D40;color:#f3ede0;
+}
+.inv-table tfoot tr.total-row td:last-child{text-align:right;}
+.inv-table tfoot tr.sub-row td{
+  padding:9px 14px;font-size:12px;color:#3a5a4a;
+  border-bottom:1px solid #e8ede8;
+}
+.inv-table tfoot tr.sub-row td:last-child{text-align:right;font-weight:600;}
+.inv-table tfoot tr.highlight-row td{
+  padding:10px 14px;font-size:13px;font-weight:600;
+  background:#e8f5ee;color:#1C4D40;
+}
+.inv-table tfoot tr.highlight-row td:last-child{text-align:right;}
+
+/* Payment summary */
+.inv-payment-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;}
+.inv-pay-box{background:#f7f5f0;border-radius:8px;padding:16px 18px;}
+.inv-pay-title{font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#1C4D40;margin-bottom:10px;}
+.inv-pay-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;}
+.inv-pay-row:last-child{margin-bottom:0;font-weight:700;font-size:13px;border-top:1px solid #d4e0da;padding-top:8px;margin-top:4px;}
+.inv-pay-label{color:#5a7a6a;}
+.inv-pay-val{font-weight:600;color:#1a2e2a;}
+
+.inv-payment-details{background:#f7f5f0;border-radius:8px;padding:16px 18px;margin-bottom:24px;}
+.inv-pay-detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px;}
+.inv-pay-detail-item{text-align:center;}
+.inv-pay-detail-label{font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#8a9e96;}
+.inv-pay-detail-val{font-size:14px;font-weight:700;color:#1C4D40;margin-top:3px;}
+
+.inv-terms{margin-bottom:24px;}
+.inv-terms-text{font-size:11px;color:#5a7a6a;line-height:1.7;}
+
+.inv-signatures{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:8px;}
+.inv-sig-box{border-top:1px solid #c4d4cc;padding-top:10px;}
+.inv-sig-label{font-size:10px;color:#8a9e96;letter-spacing:0.08em;text-transform:uppercase;}
+.inv-sig-name{font-size:12px;font-weight:600;color:#1a2e2a;margin-top:4px;}
+.inv-sig-sub{font-size:10px;color:#8a9e96;}
+
+.inv-footer{
+  background:linear-gradient(135deg,#0a2230,#1C4D40);
+  padding:14px 40px;text-align:center;
+  font-size:9px;letter-spacing:0.14em;text-transform:uppercase;
+  color:rgba(243,237,224,0.5);
+}
+
+/* Hidden in normal view, shown when printing */
+@media print {
+  body{background:#fff;}
+  .topbar,.form-panel,.preview-label{display:none!important;}
+  .layout{display:block;}
+  .preview-panel{background:#fff;padding:0;max-height:none;overflow:visible;}
+  .invoice{box-shadow:none;width:100%;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">APS Invoice Generator</div>
+    <div class="topbar-sub">Audio Pine Solutions · Fill form → Preview → Print PDF</div>
+  </div>
+  <div class="topbar-right">
+    <button class="btn btn-outline" onclick="clearForm()">Clear</button>
+    <button class="btn btn-primary" onclick="updatePreview()">Update Preview</button>
+    <button class="btn btn-green" onclick="window.print()">Print / Save PDF</button>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- FORM PANEL -->
+  <div class="form-panel">
+
+    <!-- MODE -->
+    <div class="form-section">
+      <div class="form-section-title">Invoice Type</div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="mode-product" onclick="setMode('product')">
+          <span class="mode-icon">🔊</span>
+          <span class="mode-label">Vehicle / Product</span>
+          <span class="mode-sub">Line items & parts</span>
+        </button>
+        <button class="mode-btn" id="mode-project" onclick="setMode('project')">
+          <span class="mode-icon">💼</span>
+          <span class="mode-label">Project / Consulting</span>
+          <span class="mode-sub">Contract & milestones</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- INVOICE DETAILS -->
+    <div class="form-section">
+      <div class="form-section-title">Invoice Details</div>
+      <div class="input-row">
+        <div>
+          <label>Invoice No</label>
+          <input type="text" id="inv-no" placeholder="APS-2026-0050" oninput="updatePreview()">
+        </div>
+        <div>
+          <label>Date</label>
+          <input type="date" id="inv-date" oninput="updatePreview()">
+        </div>
+      </div>
+      <label>Invoice Title / Project Name</label>
+      <input type="text" id="inv-title" placeholder="VW Golf MK1 Invoice" oninput="updatePreview()">
+      <label>Invoice Sub-header (optional)</label>
+      <input type="text" id="inv-subheader" placeholder="e.g. VEHICLE AUDIO · OFFICIAL INVOICE" oninput="updatePreview()">
+    </div>
+
+    <!-- CLIENT -->
+    <div class="form-section">
+      <div class="form-section-title">Client Information</div>
+      <label>Client Name</label>
+      <input type="text" id="client-name" placeholder="Juma Stephen" oninput="updatePreview()">
+      <label>Phone</label>
+      <input type="text" id="client-phone" placeholder="0723 245 550" oninput="updatePreview()">
+      <div id="vehicle-fields">
+        <label>Vehicle</label>
+        <input type="text" id="client-vehicle" placeholder="VW Golf MK1" oninput="updatePreview()">
+        <label>Service Requested</label>
+        <input type="text" id="client-service" placeholder="Pioneer Component Speaker Installation" oninput="updatePreview()">
+        <label>Technician Lead</label>
+        <input type="text" id="client-tech" placeholder="Bill" oninput="updatePreview()">
+      </div>
+      <div id="project-fields" style="display:none">
+        <label>Client / Project</label>
+        <input type="text" id="client-project" placeholder="Fulgent Post" oninput="updatePreview()">
+        <label>Service Period</label>
+        <input type="text" id="client-period" placeholder="June 2026 – July 2026" oninput="updatePreview()">
+      </div>
+    </div>
+
+    <!-- DESCRIPTION (project mode) -->
+    <div id="desc-section" class="form-section" style="display:none">
+      <div class="form-section-title">Project Description</div>
+      <textarea id="proj-desc" rows="3" placeholder="Digital Infrastructure, Systems Development & Strategic Advisory Services..." oninput="updatePreview()"></textarea>
+    </div>
+
+    <!-- LINE ITEMS (product mode) -->
+    <div id="items-section" class="form-section">
+      <div class="form-section-title">Line Items</div>
+      <div class="line-items" id="line-items-container"></div>
+      <button class="add-line-btn" onclick="addLineItem()">+ Add Item</button>
+    </div>
+
+    <!-- CONTRACT (project mode) -->
+    <div id="contract-section" class="form-section" style="display:none">
+      <div class="form-section-title">Contract & Payment Schedule</div>
+      <label>Total Contract Value (KES)</label>
+      <input type="number" id="contract-total" placeholder="175000" oninput="updatePreview()">
+      <div id="prev-payments-container"></div>
+      <button class="add-line-btn" onclick="addPrevPayment()">+ Add Previous Payment</button>
+      <label style="margin-top:14px">Current Payment Request (KES)</label>
+      <input type="number" id="current-payment" placeholder="50000" oninput="updatePreview()">
+      <label>Current Payment Label</label>
+      <input type="text" id="current-payment-label" placeholder="June/July 2026" oninput="updatePreview()">
+    </div>
+
+    <!-- PAYMENT SUMMARY (product mode) -->
+    <div id="pay-summary-section" class="form-section">
+      <div class="form-section-title">Payment Received</div>
+      <div id="pay-methods-container"></div>
+      <button class="add-line-btn" onclick="addPayMethod()">+ Add Payment</button>
+    </div>
+
+    <!-- PAYMENT DETAILS -->
+    <div class="form-section">
+      <div class="form-section-title">Payment Details</div>
+      <div class="input-row">
+        <div>
+          <label>Paybill</label>
+          <input type="text" id="pay-paybill" value="328585" oninput="updatePreview()">
+        </div>
+        <div>
+          <label>Account No</label>
+          <input type="text" id="pay-account" value="122312" oninput="updatePreview()">
+        </div>
+      </div>
+      <label>Account Name</label>
+      <input type="text" id="pay-name" value="Audio Pine Solutions" oninput="updatePreview()">
+    </div>
+
+    <!-- TERMS -->
+    <div class="form-section">
+      <div class="form-section-title">Terms</div>
+      <textarea id="inv-terms" rows="3" oninput="updatePreview()">Payment due upon receipt of invoice. This invoice forms part of approved work under Audio Pine Solutions.</textarea>
+    </div>
+
+    <!-- PREPARED BY -->
+    <div class="form-section">
+      <div class="form-section-title">Prepared By</div>
+      <input type="text" id="prepared-by" value="Audio Pine Solutions" oninput="updatePreview()">
+      <label>Title</label>
+      <input type="text" id="prepared-title" value="Digital Infrastructure • Systems Development • Strategic Advisory Services" oninput="updatePreview()">
+    </div>
+
+  </div>
+
+  <!-- PREVIEW PANEL -->
+  <div class="preview-panel">
+    <div class="preview-label">Live Preview — Click "Print / Save PDF" to export</div>
+    <div class="invoice" id="invoice-preview">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+
+</div>
+
+<script>
+let mode = 'product';
+let lineItems = [];
+let prevPayments = [];
+let payMethods = [];
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('mode-product').classList.toggle('active', m === 'product');
+  document.getElementById('mode-project').classList.toggle('active', m === 'project');
+  document.getElementById('vehicle-fields').style.display = m === 'product' ? '' : 'none';
+  document.getElementById('project-fields').style.display = m === 'project' ? '' : 'none';
+  document.getElementById('desc-section').style.display = m === 'project' ? '' : 'none';
+  document.getElementById('items-section').style.display = m === 'product' ? '' : 'none';
+  document.getElementById('contract-section').style.display = m === 'project' ? '' : 'none';
+  document.getElementById('pay-summary-section').style.display = m === 'product' ? '' : 'none';
+  updatePreview();
+}
+
+function g(id) { return document.getElementById(id)?.value || ''; }
+
+function fmt(n) {
+  const num = parseFloat(n) || 0;
+  return num.toLocaleString('en-KE', {minimumFractionDigits:0,maximumFractionDigits:0});
+}
+
+// LINE ITEMS
+function addLineItem(item='', desc='', amt='') {
+  const idx = lineItems.length;
+  lineItems.push({item, desc, amt});
+  const c = document.getElementById('line-items-container');
+  const div = document.createElement('div');
+  div.className = 'line-item';
+  div.id = `li-${idx}`;
+  div.innerHTML = `
+    <div class="line-item-row">
+      <input type="text" placeholder="Item" value="${item}" oninput="lineItems[${idx}].item=this.value;updatePreview()">
+      <input type="text" placeholder="Description" value="${desc}" oninput="lineItems[${idx}].desc=this.value;updatePreview()">
+      <input type="number" placeholder="Amount" value="${amt}" oninput="lineItems[${idx}].amt=this.value;updatePreview()">
+      <button class="remove-btn" onclick="removeLineItem(${idx})">×</button>
+    </div>`;
+  c.appendChild(div);
+  updatePreview();
+}
+
+function removeLineItem(idx) {
+  lineItems[idx] = null;
+  const el = document.getElementById(`li-${idx}`);
+  if(el) el.remove();
+  updatePreview();
+}
+
+// PREV PAYMENTS
+function addPrevPayment(label='', amt='') {
+  const idx = prevPayments.length;
+  prevPayments.push({label, amt});
+  const c = document.getElementById('prev-payments-container');
+  const div = document.createElement('div');
+  div.className = 'pay-row';
+  div.id = `pp-${idx}`;
+  div.innerHTML = `
+    <input type="text" placeholder="e.g. May 2026" value="${label}" oninput="prevPayments[${idx}].label=this.value;updatePreview()">
+    <input type="number" placeholder="Amount" value="${amt}" oninput="prevPayments[${idx}].amt=this.value;updatePreview()">
+    <button class="remove-btn" onclick="removePrevPayment(${idx})">×</button>`;
+  c.appendChild(div);
+  updatePreview();
+}
+
+function removePrevPayment(idx) {
+  prevPayments[idx] = null;
+  const el = document.getElementById(`pp-${idx}`);
+  if(el) el.remove();
+  updatePreview();
+}
+
+// PAY METHODS
+function addPayMethod(method='', amt='') {
+  const idx = payMethods.length;
+  payMethods.push({method, amt});
+  const c = document.getElementById('pay-methods-container');
+  const div = document.createElement('div');
+  div.className = 'pay-row';
+  div.id = `pm-${idx}`;
+  div.innerHTML = `
+    <input type="text" placeholder="e.g. M-PESA / TILL" value="${method}" oninput="payMethods[${idx}].method=this.value;updatePreview()">
+    <input type="number" placeholder="Amount" value="${amt}" oninput="payMethods[${idx}].amt=this.value;updatePreview()">
+    <button class="remove-btn" onclick="removePayMethod(${idx})">×</button>`;
+  c.appendChild(div);
+  updatePreview();
+}
+
+function removePayMethod(idx) {
+  payMethods[idx] = null;
+  const el = document.getElementById(`pm-${idx}`);
+  if(el) el.remove();
+  updatePreview();
+}
+
+function updatePreview() {
+  const preview = document.getElementById('invoice-preview');
+
+  // --- common values ---
+  const invNo      = g('inv-no') || 'APS-2026-XXXX';
+  const invDate    = g('inv-date') ? new Date(g('inv-date')).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}) : '—';
+  const invTitle   = g('inv-title') || 'INVOICE';
+  const invSub     = g('inv-subheader') || (mode==='product' ? 'VEHICLE AUDIO · OFFICIAL INVOICE' : 'PROJECT SERVICES · OFFICIAL INVOICE');
+  const clientName = g('client-name') || '—';
+  const terms      = g('inv-terms');
+  const prepBy     = g('prepared-by') || 'Audio Pine Solutions';
+  const prepTitle  = g('prepared-title');
+  const paybill    = g('pay-paybill');
+  const payAcc     = g('pay-account');
+  const payName    = g('pay-name');
+
+  let metaRows = `
+    <div class="inv-meta-row"><span class="inv-meta-key">Invoice No:</span><span class="inv-meta-val">${invNo}</span></div>
+    <div class="inv-meta-row"><span class="inv-meta-key">Invoice Date:</span><span class="inv-meta-val">${invDate}</span></div>
+    <div class="inv-meta-row"><span class="inv-meta-key">Client Name:</span><span class="inv-meta-val">${clientName}</span></div>`;
+
+  let tableHTML = '';
+  let paymentHTML = '';
+  let descHTML = '';
+
+  if (mode === 'product') {
+    const phone   = g('client-phone');
+    const vehicle = g('client-vehicle');
+    const service = g('client-service');
+    const tech    = g('client-tech');
+
+    if(phone)   metaRows += `<div class="inv-meta-row"><span class="inv-meta-key">Telephone:</span><span class="inv-meta-val">${phone}</span></div>`;
+    if(vehicle) metaRows += `<div class="inv-meta-row"><span class="inv-meta-key">Vehicle:</span><span class="inv-meta-val">${vehicle}</span></div>`;
+    if(service) metaRows += `<div class="inv-meta-row"><span class="inv-meta-key">Service Requested:</span><span class="inv-meta-val">${service}</span></div>`;
+    if(tech)    metaRows += `<div class="inv-meta-row"><span class="inv-meta-key">Technician Lead:</span><span class="inv-meta-val">${tech}</span></div>`;
+
+    const validItems = lineItems.filter(i => i && (i.item || i.amt));
+    const total = validItems.reduce((s,i) => s + (parseFloat(i.amt)||0), 0);
+
+    let rows = validItems.length ? validItems.map(i => `
+      <tr>
+        <td>${i.item}</td>
+        <td>${i.desc}</td>
+        <td>KES ${fmt(i.amt)}</td>
+      </tr>`).join('') : `<tr><td colspan="3" style="color:#8a9e96;text-align:center;padding:20px">Add line items using the form</td></tr>`;
+
+    const validPay = payMethods.filter(p => p && (p.method || p.amt));
+    const totalPaid = validPay.reduce((s,p) => s + (parseFloat(p.amt)||0), 0);
+    const balance = total - totalPaid;
+
+    let payRows = validPay.map(p => `
+      <tr class="sub-row"><td>Paid via ${p.method}</td><td></td><td>KES ${fmt(p.amt)}</td></tr>`).join('');
+
+    tableHTML = `
+      <div class="inv-section-title">Invoice Breakdown</div>
+      <table class="inv-table">
+        <thead><tr><th>Item</th><th>Description</th><th>Amount (KES)</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr class="total-row"><td colspan="2">TOTAL</td><td>KES ${fmt(total)}</td></tr>
+          ${payRows}
+          ${validPay.length ? `<tr class="highlight-row"><td colspan="2">Balance Due</td><td>KES ${fmt(balance)}</td></tr>` : ''}
+        </tfoot>
+      </table>`;
+
+    if(validPay.length) {
+      paymentHTML = `
+        <div class="inv-section-title">Payment Summary</div>
+        <div class="inv-payment-grid">
+          <div class="inv-pay-box">
+            <div class="inv-pay-title">Summary</div>
+            <div class="inv-pay-row"><span class="inv-pay-label">Total Invoice</span><span class="inv-pay-val">KES ${fmt(total)}</span></div>
+            <div class="inv-pay-row"><span class="inv-pay-label">Total Paid</span><span class="inv-pay-val">KES ${fmt(totalPaid)}</span></div>
+            <div class="inv-pay-row"><span class="inv-pay-label">Balance</span><span class="inv-pay-val">KES ${fmt(balance)}</span></div>
+          </div>
+          <div class="inv-pay-box">
+            <div class="inv-pay-title">Payments Received</div>
+            ${validPay.map(p=>`<div class="inv-pay-row"><span class="inv-pay-label">${p.method}</span><span class="inv-pay-val">KES ${fmt(p.amt)}</span></div>`).join('')}
+          </div>
+        </div>`;
+    }
+
+  } else {
+    // PROJECT MODE
+    const proj   = g('client-project');
+    const period = g('client-period');
+    const desc   = g('proj-desc');
+
+    if(proj)   metaRows += `<div class="inv-meta-row"><span class="inv-meta-key">Client/Project:</span><span class="inv-meta-val">${proj}</span></div>`;
+    if(period) metaRows += `<div class="inv-meta-row"><span class="inv-meta-key">Service Period:</span><span class="inv-meta-val">${period}</span></div>`;
+
+    if(desc) {
+      descHTML = `
+        <div class="inv-section-title">Project Description</div>
+        <div class="inv-desc">${desc}</div>`;
+    }
+
+    const contractTotal = parseFloat(g('contract-total')) || 0;
+    const currentPay    = parseFloat(g('current-payment')) || 0;
+    const currentLabel  = g('current-payment-label') || 'Current Period';
+    const validPrev     = prevPayments.filter(p => p && p.amt);
+    const totalPrevPaid = validPrev.reduce((s,p) => s + (parseFloat(p.amt)||0), 0);
+    const outstanding   = contractTotal - totalPrevPaid;
+    const remaining     = outstanding - currentPay;
+
+    let rows = contractTotal ? `
+      <tr><td>Total Contract Value</td><td></td><td><strong>${fmt(contractTotal)}</strong></td></tr>
+      ${validPrev.map(p=>`<tr><td>Amount Previously Paid — ${p.label}</td><td></td><td>(${fmt(p.amt)})</td></tr>`).join('')}
+      <tr><td><strong>Outstanding Balance</strong></td><td></td><td><strong>${fmt(outstanding)}</strong></td></tr>` : 
+      `<tr><td colspan="3" style="color:#8a9e96;text-align:center;padding:20px">Fill in contract details using the form</td></tr>`;
+
+    let footRows = contractTotal && currentPay ? `
+      <tr class="highlight-row"><td colspan="2">Current Payment Request — ${currentLabel}</td><td>KES ${fmt(currentPay)}</td></tr>
+      <tr class="sub-row"><td colspan="2">Remaining Balance After Current Payment</td><td>${fmt(remaining)}</td></tr>` : '';
+
+    tableHTML = `
+      <div class="inv-section-title">Invoice Breakdown</div>
+      <table class="inv-table">
+        <thead><tr><th>Description</th><th></th><th>Amount (KES)</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot>${footRows}</tfoot>
+      </table>`;
+  }
+
+  // PAYMENT DETAILS BOX
+  const payDetailsHTML = (paybill || payAcc || payName) ? `
+    <div class="inv-section-title">Payment Details</div>
+    <div class="inv-payment-details">
+      <div class="inv-pay-detail-grid">
+        <div class="inv-pay-detail-item"><div class="inv-pay-detail-label">Paybill</div><div class="inv-pay-detail-val">${paybill}</div></div>
+        <div class="inv-pay-detail-item"><div class="inv-pay-detail-label">Account No</div><div class="inv-pay-detail-val">${payAcc}</div></div>
+        <div class="inv-pay-detail-item"><div class="inv-pay-detail-label">Account Name</div><div class="inv-pay-detail-val" style="font-size:11px">${payName}</div></div>
+      </div>
+    </div>` : '';
+
+  preview.innerHTML = `
+    <div class="inv-header">
+      <div class="inv-logo-area">
+        <div class="inv-logo"><img src="https://kali793765.github.io/aps---dashboard/logo.jpg" onerror="this.parentElement.innerHTML='<span style=font-size:22px;>🌲</span>'"></div>
+        <div class="inv-company">
+          <div class="inv-company-name">AUDIO PINE<br>SOLUTIONS</div>
+          <div class="inv-company-tag">Nairobi, Kenya</div>
+        </div>
+      </div>
+      <div class="inv-header-right">
+        <div class="inv-header-type">Official Invoice</div>
+        <div class="inv-header-project">${invSub}</div>
+      </div>
+    </div>
+
+    <div class="inv-body">
+      <div class="inv-title">${invTitle.toUpperCase()}</div>
+      <div class="inv-divider"></div>
+
+      <div class="inv-meta">${metaRows}</div>
+
+      ${descHTML}
+      ${tableHTML}
+      ${paymentHTML}
+      ${payDetailsHTML}
+
+      ${terms ? `
+      <div class="inv-terms">
+        <div class="inv-section-title">Terms</div>
+        <div class="inv-terms-text">${terms}</div>
+      </div>` : ''}
+
+      <div class="inv-signatures">
+        <div class="inv-sig-box">
+          <div class="inv-sig-label">Client Confirmation</div>
+          <div class="inv-sig-name">${clientName}</div>
+        </div>
+        <div class="inv-sig-box">
+          <div class="inv-sig-label">Prepared By</div>
+          <div class="inv-sig-name">${prepBy}</div>
+          <div class="inv-sig-sub">${prepTitle}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="inv-footer">
+      Digital Infrastructure • Systems Development • Strategic Advisory Services • Audio Pine Solutions
+    </div>`;
+}
+
+function clearForm() {
+  if(!confirm('Clear all form data?')) return;
+  lineItems=[]; prevPayments=[]; payMethods=[];
+  document.getElementById('line-items-container').innerHTML='';
+  document.getElementById('prev-payments-container').innerHTML='';
+  document.getElementById('pay-methods-container').innerHTML='';
+  document.querySelectorAll('input,textarea').forEach(el=>{
+    if(!['pay-paybill','pay-account','pay-name','inv-terms','prepared-by','prepared-title'].includes(el.id)) el.value='';
+  });
+  updatePreview();
+}
+
+// Init
+window.onload = () => {
+  document.getElementById('inv-date').value = new Date().toISOString().split('T')[0];
+  addLineItem('','','');
+  addPayMethod('M-PESA','');
+  updatePreview();
+};
+</script>
+</body>
+</html>
